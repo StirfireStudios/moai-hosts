@@ -42,7 +42,6 @@
 
 	//----------------------------------------------------------------//
 	-( BOOL ) application:( UIApplication* )application didFinishLaunchingWithOptions:( NSDictionary* )launchOptions {
-		
 		[ application setStatusBarHidden:true ];
         
         CGRect viewBounds;
@@ -50,7 +49,7 @@
         viewBounds.origin.y = [ UIScreen mainScreen ].bounds.origin.y;
         viewBounds.size.width = [ UIScreen mainScreen ].bounds.size.height;
         viewBounds.size.height = [ UIScreen mainScreen ].bounds.size.width;
-
+        
 		mMoaiView = [[ MoaiView alloc ] initWithFrame:viewBounds ];
 		[ mMoaiView setUserInteractionEnabled:YES ];
 		[ mMoaiView setMultipleTouchEnabled:YES ];
@@ -73,14 +72,10 @@
 		
 		// select product folder
 		NSString* luaFolder = [[[ NSBundle mainBundle ] resourcePath ] stringByAppendingString:@"/lua" ];
-        NSString* luacompiledMain = [NSString stringWithFormat:@"%@/main.lb", luaFolder];
-        NSString* luaMain = [NSString stringWithFormat:@"%@/main.lua", luaFolder];
 		AKUSetWorkingDirectory ([ luaFolder UTF8String ]);
 		
-        if ([[NSFileManager defaultManager] fileExistsAtPath:luacompiledMain])
-            [ mMoaiView run:@"main.lb" ];
-        else
-            [ mMoaiView run:@"main.lua" ];
+		// run scripts
+		[ mMoaiView run:@"main.lua" ];
 		
         // check to see if the app was lanuched from a remote notification
         NSDictionary* pushBundle = [ launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey ];
@@ -88,6 +83,8 @@
             
             AKUNotifyRemoteNotificationReceived ( pushBundle );
         }
+		
+		AKUAppDidStartSession(false);
 		
 		// return
 		return true;
@@ -115,23 +112,24 @@
 	
 	//----------------------------------------------------------------//
 	-( void ) applicationDidEnterBackground:( UIApplication* )application {
+		AKUAppWillEndSession();
 	}
-	
+
 	//----------------------------------------------------------------//
 	-( void ) applicationWillEnterForeground:( UIApplication* )application {
+		AKUAppDidStartSession(true);
 	}
 	
 	//----------------------------------------------------------------//
 	-( void ) applicationWillResignActive:( UIApplication* )application {
-	
+		AKUAppWillEndSession();
 		// pause moai view
 		[ mMoaiView pause:YES ];
 	}
 	
 	//----------------------------------------------------------------//
 	-( void ) applicationWillTerminate :( UIApplication* )application {
-
-		AKUFinalize ();
+		AKUAppWillFinalize();
 	}
 
 	//----------------------------------------------------------------//
@@ -140,7 +138,6 @@
 		//----------------------------------------------------------------//
 		// For iOS 4.2+ support
 		-( BOOL )application:( UIApplication* )application openURL:( NSURL* )url sourceApplication:( NSString* )sourceApplication annotation:( id )annotation {
-
 			AKUAppOpenFromURL ( url );
 			return YES;
 		}
